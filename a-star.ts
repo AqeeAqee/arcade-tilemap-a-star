@@ -1,3 +1,4 @@
+
 namespace scene {
     class PrioritizedLocation {
         constructor(
