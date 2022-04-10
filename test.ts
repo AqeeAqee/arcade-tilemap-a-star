@@ -127,14 +127,14 @@ controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
         let loc=tiles.getRandomTileByType(imgGround)
         let ms1 = 0, ms2 = 0
 
-        ms2 = control.millis()
-        path = scene1.aStar(tiles.getTileLocation(0, 0), loc)
-        ms2 = control.millis() - ms2
-        
         ms1 =control.millis()
-        path = scene.aStar(tiles.getTileLocation(0, 0), loc)
+        path = scene_origin.aStar(tiles.getTileLocation(0, 0), loc)
         ms1 =control.millis()-ms1
 
+        ms2 = control.millis()
+        path = scene.aStar(tiles.getTileLocation(0, 0), loc)
+        ms2 = control.millis() - ms2
+        
         const y = path ? path.length:119
         resultSprite.image.setPixel(ms1, y, 5)
         resultSprite.image.setPixel(ms2, y, 2)

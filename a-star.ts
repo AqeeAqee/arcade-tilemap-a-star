@@ -1,4 +1,3 @@
-
 namespace scene {
     class PrioritizedLocation {
         constructor(
@@ -67,17 +66,18 @@ namespace scene {
         }
 
         const consideredTiles = new Heap<PrioritizedLocation>(
-            (a, b) => (a.cost ** 2 + a.extraCost) - (b.cost ** 2 + b.extraCost)
+            (a, b) => (a.cost + a.extraCost) - (b.cost + b.extraCost)
+            // (a, b) => (a.cost ** 2 + a.extraCost) - (b.cost ** 2 + b.extraCost)
         );
         const encountedLocations: LocationNode[][] = [[]];
 
         function updateOrFillLocation(l: tiles.Location, parent: LocationNode, cost: number) {
-            const row = locationRow(l);
-            const col = locationCol(l);
+            const row = l.row;
+            const col = l.col;
 
-            if (tm.isObstacle(col, row)) {
-                return;
-            }
+            // if (tm.isObstacle(col, row)) {
+            //     return;
+            // }
 
             const colData = (encountedLocations[col] || (encountedLocations[col] = []));
             const lData = colData[row];
@@ -88,7 +88,7 @@ namespace scene {
                     parent,
                     cost
                 );
-            } else if (!lData.visited && lData.lastCost > cost) {
+            } else if (!lData.visited && lData.lastCost > cost) {//!lData.visited &&
                 lData.lastCost = cost;
                 lData.parent = parent;
             } else {
@@ -100,19 +100,21 @@ namespace scene {
             // if (h > parent.extraCost) {
 
             // }
-
+            let ms = control.micros()
             consideredTiles.push(
                 new PrioritizedLocation(
                     l,
                     cost,
-                    h
+                    h * 100
                 )
             );
+
         }
         updateOrFillLocation(start, null, 0);
 
         let end: tiles.Location = null;
         while (consideredTiles.length !== 0) {
+
             const currLocation = consideredTiles.pop();
 
             if (isEnd(currLocation.loc)) {
@@ -120,8 +122,11 @@ namespace scene {
                 break;
             }
 
-            const row = locationRow(currLocation.loc);
-            const col = locationCol(currLocation.loc);
+            const row = currLocation.loc.row;
+            const col = currLocation.loc.col;
+
+            const neighborCost = currLocation.cost + 100;
+            const cornerCost = currLocation.cost + 141//.414213562373095;  //much faster
 
             const dataForCurrLocation = encountedLocations[col][row];
 
@@ -139,54 +144,52 @@ namespace scene {
             const top = tiles.getTileLocation(col, row - 1);
             const bottom = tiles.getTileLocation(col, row + 1);
 
-            const leftIsWall = !isWalkable(left, onTilesOf, tm);
-            const rightIsWall = !isWalkable(right, onTilesOf, tm);
-            const topIsWall = !isWalkable(top, onTilesOf, tm);
-            const bottomIsWall = !isWalkable(bottom, onTilesOf, tm);
+            let leftIsWall = false
+            let rightIsWall = false
+            let topIsWall = false
+            let bottomIsWall = false
 
+            if (onTilesOf) {
+                leftIsWall = !isWalkable(left, onTilesOf, tm);
+                rightIsWall = !isWalkable(right, onTilesOf, tm);
+                topIsWall = !isWalkable(top, onTilesOf, tm);
+                bottomIsWall = !isWalkable(bottom, onTilesOf, tm);
+            } else {
+                leftIsWall = tm.isObstacle(left.col, left.row);
+                rightIsWall = tm.isObstacle(right.col, right.row);
+                topIsWall = tm.isObstacle(top.col, top.row);
+                bottomIsWall = tm.isObstacle(bottom.col, bottom.row);
+            }
             if (!leftIsWall) {
-                neighbors.push(left);
+                updateOrFillLocation(left, dataForCurrLocation, neighborCost);
                 if (!topIsWall) {
                     const topLeft = tiles.getTileLocation(col - 1, row - 1);
-                    if (!isWall(topLeft, tm)) corners.push(topLeft);
+                    if (!tm.isObstacle(topLeft.col, topLeft.row)) updateOrFillLocation(topLeft, dataForCurrLocation, cornerCost);
                 }
                 if (!bottomIsWall) {
                     const bottomLeft = tiles.getTileLocation(col - 1, row + 1);
-                    if (!isWall(bottomLeft, tm)) corners.push(bottomLeft);
+                    if (!tm.isObstacle(bottomLeft.col, bottomLeft.row)) updateOrFillLocation(bottomLeft, dataForCurrLocation, cornerCost);
                 }
             }
 
             if (!rightIsWall) {
-                neighbors.push(right);
+                updateOrFillLocation(right, dataForCurrLocation, neighborCost);
                 if (!topIsWall) {
                     const topRight = tiles.getTileLocation(col + 1, row - 1);
-                    if (!isWall(topRight, tm)) corners.push(topRight);
+                    if (!tm.isObstacle(topRight.col, topRight.row)) updateOrFillLocation(topRight, dataForCurrLocation, cornerCost);
                 }
                 if (!bottomIsWall) {
                     const bottomRight = tiles.getTileLocation(col + 1, row + 1);
-                    if (!isWall(bottomRight, tm)) corners.push(bottomRight);
+                    if (!tm.isObstacle(bottomRight.col, bottomRight.row)) updateOrFillLocation(bottomRight, dataForCurrLocation, cornerCost);
                 }
             }
 
-            if (!topIsWall) neighbors.push(top);
-            if (!bottomIsWall) neighbors.push(bottom);
-
-            const neighborCost = currLocation.cost + 1;
-            for (const node of neighbors) {
-                updateOrFillLocation(node, dataForCurrLocation, neighborCost);
-            }
-            if (corners.length) {
-                // 2 / Math.sqrt(2)
-                const costToMoveToCorner = 1.414213562373095;
-                const cornerCost = currLocation.cost + costToMoveToCorner;
-                for (const corner of corners) {
-                    updateOrFillLocation(corner, dataForCurrLocation, cornerCost);
-                }
-            }
+            if (!topIsWall) updateOrFillLocation(top, dataForCurrLocation, neighborCost);
+            if (!bottomIsWall) updateOrFillLocation(bottom, dataForCurrLocation, neighborCost);
         }
 
-        const endCol = end && encountedLocations[locationCol(end)];
-        const endDataNode = endCol && endCol[locationRow(end)];
+        const endCol = end && encountedLocations[end.col];
+        const endDataNode = endCol && endCol[end.row];
 
         // no path found
         if (!end || !endDataNode)
@@ -206,33 +209,36 @@ namespace scene {
     }
 
     function tileLocationHeuristic(tile: tiles.Location, target: tiles.Location) {
-        const startCol = locationCol(tile);
-        const startRow = locationRow(tile);
-        const endCol = locationCol(target);
-        const endRow = locationRow(target);
+        // const startCol = locationCol(tile);
+        // const startRow = locationRow(tile);
+        // const endCol =   locationCol(target);
+        // const endRow =   locationRow(target);
+        const xDist = Math.abs(target.col - tile.col)
+        const yDist = Math.abs(target.row - tile.row)
 
-        return ((startCol - endCol) ** 2
-            + (startRow - endRow) ** 2)
+        return Math.max(xDist, yDist) * 14 - Math.min(xDist, yDist) * 10
+        // return ((startCol - endCol) ** 2
+        //     + (startRow - endRow) ** 2)
     }
 
     // TODO: these should probably be exposed on tiles.Location;
     // no reason for them to be hidden
-    function locationRow(l: tiles.Location): number {
-        return l.y >> 4;
-    }
+    // function locationRow(l: tiles.Location): number {
+    //     return l.y >> 4;
+    // }
 
-    function locationCol(l: tiles.Location): number {
-        return l.x >> 4;
-    }
+    // function locationCol(l: tiles.Location): number {
+    //     return l.x >> 4;
+    // }
 
-    function isWall(l: tiles.Location, tm: tiles.TileMap) {
-        const r = locationRow(l);
-        const c = locationCol(l);
-        return tm.isObstacle(c, r);
-    }
+    // function isWall(l: tiles.Location, tm: tiles.TileMap) {
+    //     // const r = l.col // locationRow(l);
+    //     // const c = l.row // locationCol(l);
+    //     return tm.isObstacle(l.col, l.row) //(c, r);
+    // }
 
     function isWalkable(l: tiles.Location, onTilesOf: Image, tm: tiles.TileMap): boolean {
-        if (isWall(l, tm)) return false;
+        if (tm.isObstacle(l.col, l.row)) return false;
         if (!onTilesOf) return true;
         const img = tm.getTileImage(tm.getTileIndex(l.col, l.row))
         return img.equals(onTilesOf);

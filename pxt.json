@@ -16,7 +16,7 @@
         "docs/sprite-percent-path-completed.md",
         "docs/sprite-is-following-path.md",
         "docs/on-path-completion.md",
-        "a-star1.ts"
+        "a-star_origin.ts"
     ],
     "testFiles": [
         "tilemap.g.jres",
