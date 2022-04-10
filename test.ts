@@ -46,47 +46,56 @@ let mySprite2: Sprite = null
 let res: tiles.Location[] = []
 tiles.setTilemap(map)
 let mySprite = sprites.create(img`
-    . . . . . . . . . . . . . . . . 
-    . . . . . . . . . . . . . . . . 
-    . . . . . . . . . . . . . . . . 
-    . . . . . . . . . . . . . . . . 
-    . . . . . . . . . . . . . . . . 
-    . . . . . a a a a a . . . . . . 
-    . . . . . a c c c a . . . . . . 
-    . . . . . a c 3 c a . . . . . . 
-    . . . . . a c c c a . . . . . . 
-    . . . . . a a a a a . . . . . . 
-    . . . . . . . . . . . . . . . . 
-    . . . . . . . . . . . . . . . . 
-    . . . . . . . . . . . . . . . . 
-    . . . . . . . . . . . . . . . . 
-    . . . . . . . . . . . . . . . . 
-    . . . . . . . . . . . . . . . . 
-    `, SpriteKind.Player)
+    . . . . . . . . . . . . . . . .
+    . . . . . . . . . . . . . . . .
+    . . . . . . . . . . . . . . . .
+    . . . . . . . . . . . . . . . .
+    . . . . . . . . . . . . . . . .
+    . . . . . a a a a a . . . . . .
+    . . . . . a c c c a . . . . . .
+    . . . . . a c 3 c a . . . . . .
+    . . . . . a c c c a . . . . . .
+    . . . . . a a a a a . . . . . .
+    . . . . . . . . . . . . . . . .
+    . . . . . . . . . . . . . . . .
+    . . . . . . . . . . . . . . . .
+    . . . . . . . . . . . . . . . .
+    . . . . . . . . . . . . . . . .
+    . . . . . . . . . . . . . . . .
+`, SpriteKind.Player)
 controller.moveSprite(mySprite)
 scene.cameraFollowSprite(mySprite)
 mySprite2 = sprites.create(img`
-    . . 2 2 b b b b b . . . . . . . 
-    . 2 b 4 4 4 4 4 4 b . . . . . . 
-    2 2 4 4 4 4 d d 4 4 b . . . . . 
-    2 b 4 4 4 4 4 4 d 4 b . . . . . 
-    2 b 4 4 4 4 4 4 4 d 4 b . . . . 
-    2 b 4 4 4 4 4 4 4 4 4 b . . . . 
-    2 b 4 4 4 4 4 4 4 4 4 e . . . . 
-    2 2 b 4 4 4 4 4 4 4 b e . . . . 
-    . 2 b b b 4 4 4 b b b e . . . . 
-    . . e b b b b b b b e e . . . . 
-    . . . e e b 4 4 b e e e b . . . 
-    . . . . . e e e e e e b d b b . 
-    . . . . . . . . . . . b 1 1 1 b 
-    . . . . . . . . . . . c 1 d d b 
-    . . . . . . . . . . . c 1 b c . 
-    . . . . . . . . . . . . c c . . 
-    `, SpriteKind.Player)
+    . . 2 2 b b b b b . . . . . . .
+    . 2 b 4 4 4 4 4 4 b . . . . . .
+    2 2 4 4 4 4 d d 4 4 b . . . . .
+    2 b 4 4 4 4 4 4 d 4 b . . . . .
+    2 b 4 4 4 4 4 4 4 d 4 b . . . .
+    2 b 4 4 4 4 4 4 4 4 4 b . . . .
+    2 b 4 4 4 4 4 4 4 4 4 e . . . .
+    2 2 b 4 4 4 4 4 4 4 b e . . . .
+    . 2 b b b 4 4 4 b b b e . . . .
+    . . e b b b b b b b e e . . . .
+    . . . e e b 4 4 b e e e b . . .
+    . . . . . e e e e e e b d b b .
+    . . . . . . . . . . . b 1 1 1 b
+    . . . . . . . . . . . c 1 d d b
+    . . . . . . . . . . . c 1 b c .
+    . . . . . . . . . . . . c c . .
+`, SpriteKind.Player)
 
+let ms1 = 0, ms2 = 0
+let msTotal1 = 0, msTotal2 = 0
+
+game.onShade(()=>{
+    screen.fillRect(10,0,140,30,1)
+    screen.print("   " + "Before After %" , 0, 0, 3)
+    screen.print("last: " + ms1 + " " + ms2 + " " + Math.roundWithPrecision(ms2 / ms1 * 100, 2) + "%", 10, 10, 3)
+    screen.print(" sum: "+msTotal1 + " " + msTotal2 + " " + Math.roundWithPrecision(msTotal2 / msTotal1 * 100, 2) + "%", 10, 20, 3)
+})
 controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
-    let ms1=0,ms2=0
-    for(let i=0;i<10;i++){
+    const bg =game.currentScene().background.image
+    for (let i = 0; i < 1; i++) {
         tiles.placeOnRandomTile(mySprite, img`
             5 7 5 7 7 7 7 7 7 7 7 7 7 7 7 7
             7 7 7 7 7 7 7 7 7 7 7 7 7 1 7 7
@@ -105,19 +114,40 @@ controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
             7 7 7 7 7 7 7 7 7 7 7 6 d d 6 7
             7 7 5 7 7 7 7 7 7 7 7 7 7 7 7 7
         `)
-        let ms=0
+        let loc = mySprite.tilemapLocation()
+        let dist = Math.max(loc.col, loc.row)
+        while (!loc|| 16 > dist|| dist > 32){
+            tiles.placeOnRandomTile(mySprite, img`
+            5 7 5 7 7 7 7 7 7 7 7 7 7 7 7 7
+            7 7 7 7 7 7 7 7 7 7 7 7 7 1 7 7
+            7 7 7 1 1 7 7 7 7 7 7 7 1 7 1 7
+            7 7 3 1 1 3 7 7 7 5 7 7 6 1 6 7
+            7 1 1 6 6 1 1 7 7 5 7 7 7 7 7 7
+            7 d 1 7 7 1 d 7 7 6 7 7 7 7 7 7
+            7 6 3 1 1 3 6 7 7 7 7 5 7 7 7 7
+            7 7 6 d d 6 7 7 7 7 5 5 6 7 7 7
+            7 7 7 7 7 7 7 1 7 7 5 6 7 7 7 7
+            7 7 7 7 7 7 1 7 1 7 7 7 1 1 7 7
+            7 7 1 7 7 7 6 1 6 7 7 3 1 1 3 7
+            7 1 7 1 7 7 7 7 7 7 1 1 6 6 1 1
+            7 6 1 6 7 7 7 7 7 7 d 1 7 7 1 d
+            7 7 7 7 7 7 7 7 7 7 6 3 1 1 3 6
+            7 7 7 7 7 7 7 7 7 7 7 6 d d 6 7
+            7 7 5 7 7 7 7 7 7 7 7 7 7 7 7 7
+        `)
+            loc = mySprite.tilemapLocation()
+            dist = Math.max(loc.col, loc.row)
+        }
 
-        const col = mySprite.tilemapLocation().col
-        const row = mySprite.tilemapLocation().row
-        ms = control.millis()
+        ms2 = control.millis()
         res = scene1.aStar(tiles.getTileLocation(0, 0), mySprite.tilemapLocation())
-        ms2 += control.millis() - ms
-        info.setLife(ms2)
+        ms2 = control.millis() - ms2
+        msTotal2+=ms2
         
-        ms=control.millis()
+        ms1 =control.millis()
         res = scene.aStar(tiles.getTileLocation(0, 0), mySprite.tilemapLocation())
-        ms1+=control.millis()-ms
-        info.setScore(ms1)
+        ms1 =control.millis()-ms1
+        msTotal1+=ms1
 
         pause(1)
     }

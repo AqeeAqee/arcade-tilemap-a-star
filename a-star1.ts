@@ -207,12 +207,14 @@ namespace scene1 {
     }
 
     function tileLocationHeuristic(tile: tiles.Location, target: tiles.Location) {
-        const startCol = tile.col //locationCol(tile);
-        const startRow = tile.row //locationRow(tile);
-        const endCol = target.col //locationCol(target);
-        const endRow = target.row //locationRow(target);
-
-        return Math.max(Math.abs(endCol - startCol), Math.abs(endRow - startRow))
+        // const startCol = locationCol(tile);
+        // const startRow = locationRow(tile);
+        // const endCol =   locationCol(target);
+        // const endRow =   locationRow(target);
+        const xDist = Math.abs(target.col - tile.col)
+        const yDist = Math.abs(target.row - tile.row)
+        
+        return Math.max(xDist, yDist) * 14 - Math.min(xDist, yDist)*10
         // return ((startCol - endCol) ** 2
         //     + (startRow - endRow) ** 2)
     }
