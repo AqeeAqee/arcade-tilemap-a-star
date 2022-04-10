@@ -100,7 +100,7 @@ namespace scene1 {
             // if (h > parent.extraCost) {
 
             // }
-
+            let ms = control.micros()
             consideredTiles.push(
                 new PrioritizedLocation(
                     l,
@@ -108,11 +108,13 @@ namespace scene1 {
                     h*100
                 )
             );
+            
         }
         updateOrFillLocation(start, null, 0);
 
         let end: tiles.Location = null;
         while (consideredTiles.length !== 0) {
+
             const currLocation = consideredTiles.pop();
 
             if (isEnd(currLocation.loc)) {

@@ -43,7 +43,7 @@ let map = tiles.createTilemap(hex`2800280005000000000000000303000000000000000000
 `, [myTiles.transparency16, sprites.castle.tilePath7, sprites.castle.tilePath4, sprites.castle.tileGrass2, sprites.castle.tilePath8, sprites.builtin.forestTiles0, sprites.castle.tileDarkGrass2], TileScale.Sixteen);
 
 let mySprite2: Sprite = null
-let res: tiles.Location[] = []
+let path: tiles.Location[] = []
 tiles.setTilemap(map)
 let mySprite = sprites.create(img`
     . . . . . . . . . . . . . . . .
@@ -83,81 +83,70 @@ mySprite2 = sprites.create(img`
     . . . . . . . . . . . c 1 b c .
     . . . . . . . . . . . . c c . .
 `, SpriteKind.Player)
+tiles.placeOnRandomTile(mySprite, img`
+    5 7 5 7 7 7 7 7 7 7 7 7 7 7 7 7
+    7 7 7 7 7 7 7 7 7 7 7 7 7 1 7 7
+    7 7 7 1 1 7 7 7 7 7 7 7 1 7 1 7
+    7 7 3 1 1 3 7 7 7 5 7 7 6 1 6 7
+    7 1 1 6 6 1 1 7 7 5 7 7 7 7 7 7
+    7 d 1 7 7 1 d 7 7 6 7 7 7 7 7 7
+    7 6 3 1 1 3 6 7 7 7 7 5 7 7 7 7
+    7 7 6 d d 6 7 7 7 7 5 5 6 7 7 7
+    7 7 7 7 7 7 7 1 7 7 5 6 7 7 7 7
+    7 7 7 7 7 7 1 7 1 7 7 7 1 1 7 7
+    7 7 1 7 7 7 6 1 6 7 7 3 1 1 3 7
+    7 1 7 1 7 7 7 7 7 7 1 1 6 6 1 1
+    7 6 1 6 7 7 7 7 7 7 d 1 7 7 1 d
+    7 7 7 7 7 7 7 7 7 7 6 3 1 1 3 6
+    7 7 7 7 7 7 7 7 7 7 7 6 d d 6 7
+    7 7 5 7 7 7 7 7 7 7 7 7 7 7 7 7
+`)
+const imgGround = img`
+    5 7 5 7 7 7 7 7 7 7 7 7 7 7 7 7
+    7 7 7 7 7 7 7 7 7 7 7 7 7 1 7 7
+    7 7 7 1 1 7 7 7 7 7 7 7 1 7 1 7
+    7 7 3 1 1 3 7 7 7 5 7 7 6 1 6 7
+    7 1 1 6 6 1 1 7 7 5 7 7 7 7 7 7
+    7 d 1 7 7 1 d 7 7 6 7 7 7 7 7 7
+    7 6 3 1 1 3 6 7 7 7 7 5 7 7 7 7
+    7 7 6 d d 6 7 7 7 7 5 5 6 7 7 7
+    7 7 7 7 7 7 7 1 7 7 5 6 7 7 7 7
+    7 7 7 7 7 7 1 7 1 7 7 7 1 1 7 7
+    7 7 1 7 7 7 6 1 6 7 7 3 1 1 3 7
+    7 1 7 1 7 7 7 7 7 7 1 1 6 6 1 1
+    7 6 1 6 7 7 7 7 7 7 d 1 7 7 1 d
+    7 7 7 7 7 7 7 7 7 7 6 3 1 1 3 6
+    7 7 7 7 7 7 7 7 7 7 7 6 d d 6 7
+    7 7 5 7 7 7 7 7 7 7 7 7 7 7 7 7
+`
+const resultSprite=sprites.create(image.create(screen.width,screen.height))
+resultSprite.setFlag(SpriteFlag.RelativeToCamera, true)
 
-let ms1 = 0, ms2 = 0
-let msTotal1 = 0, msTotal2 = 0
-
-game.onShade(()=>{
-    screen.fillRect(10,0,140,30,1)
-    screen.print("   " + "Before After %" , 0, 0, 3)
-    screen.print("last: " + ms1 + " " + ms2 + " " + Math.roundWithPrecision(ms2 / ms1 * 100, 2) + "%", 10, 10, 3)
-    screen.print(" sum: "+msTotal1 + " " + msTotal2 + " " + Math.roundWithPrecision(msTotal2 / msTotal1 * 100, 2) + "%", 10, 20, 3)
-})
 controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
-    const bg =game.currentScene().background.image
-    for (let i = 0; i < 1; i++) {
-        tiles.placeOnRandomTile(mySprite, img`
-            5 7 5 7 7 7 7 7 7 7 7 7 7 7 7 7
-            7 7 7 7 7 7 7 7 7 7 7 7 7 1 7 7
-            7 7 7 1 1 7 7 7 7 7 7 7 1 7 1 7
-            7 7 3 1 1 3 7 7 7 5 7 7 6 1 6 7
-            7 1 1 6 6 1 1 7 7 5 7 7 7 7 7 7
-            7 d 1 7 7 1 d 7 7 6 7 7 7 7 7 7
-            7 6 3 1 1 3 6 7 7 7 7 5 7 7 7 7
-            7 7 6 d d 6 7 7 7 7 5 5 6 7 7 7
-            7 7 7 7 7 7 7 1 7 7 5 6 7 7 7 7
-            7 7 7 7 7 7 1 7 1 7 7 7 1 1 7 7
-            7 7 1 7 7 7 6 1 6 7 7 3 1 1 3 7
-            7 1 7 1 7 7 7 7 7 7 1 1 6 6 1 1
-            7 6 1 6 7 7 7 7 7 7 d 1 7 7 1 d
-            7 7 7 7 7 7 7 7 7 7 6 3 1 1 3 6
-            7 7 7 7 7 7 7 7 7 7 7 6 d d 6 7
-            7 7 5 7 7 7 7 7 7 7 7 7 7 7 7 7
-        `)
-        let loc = mySprite.tilemapLocation()
-        let dist = Math.max(loc.col, loc.row)
-        while (!loc|| 16 > dist|| dist > 32){
-            tiles.placeOnRandomTile(mySprite, img`
-            5 7 5 7 7 7 7 7 7 7 7 7 7 7 7 7
-            7 7 7 7 7 7 7 7 7 7 7 7 7 1 7 7
-            7 7 7 1 1 7 7 7 7 7 7 7 1 7 1 7
-            7 7 3 1 1 3 7 7 7 5 7 7 6 1 6 7
-            7 1 1 6 6 1 1 7 7 5 7 7 7 7 7 7
-            7 d 1 7 7 1 d 7 7 6 7 7 7 7 7 7
-            7 6 3 1 1 3 6 7 7 7 7 5 7 7 7 7
-            7 7 6 d d 6 7 7 7 7 5 5 6 7 7 7
-            7 7 7 7 7 7 7 1 7 7 5 6 7 7 7 7
-            7 7 7 7 7 7 1 7 1 7 7 7 1 1 7 7
-            7 7 1 7 7 7 6 1 6 7 7 3 1 1 3 7
-            7 1 7 1 7 7 7 7 7 7 1 1 6 6 1 1
-            7 6 1 6 7 7 7 7 7 7 d 1 7 7 1 d
-            7 7 7 7 7 7 7 7 7 7 6 3 1 1 3 6
-            7 7 7 7 7 7 7 7 7 7 7 6 d d 6 7
-            7 7 5 7 7 7 7 7 7 7 7 7 7 7 7 7
-        `)
-            loc = mySprite.tilemapLocation()
-            dist = Math.max(loc.col, loc.row)
-        }
+    for (let i = 0; i < 100; i++) {
+        let loc=tiles.getRandomTileByType(imgGround)
+        let ms1 = 0, ms2 = 0
 
         ms2 = control.millis()
-        res = scene1.aStar(tiles.getTileLocation(0, 0), mySprite.tilemapLocation())
+        path = scene1.aStar(tiles.getTileLocation(0, 0), loc)
         ms2 = control.millis() - ms2
-        msTotal2+=ms2
         
         ms1 =control.millis()
-        res = scene.aStar(tiles.getTileLocation(0, 0), mySprite.tilemapLocation())
+        path = scene.aStar(tiles.getTileLocation(0, 0), loc)
         ms1 =control.millis()-ms1
-        msTotal1+=ms1
+
+        const y = path ? path.length:119
+        resultSprite.image.setPixel(ms1, y, 5)
+        resultSprite.image.setPixel(ms2, y, 2)
 
         pause(1)
+
     }
-    // if (((res[res.length - 2].x - mySprite.x) ** 2 + (res[res.length - 2].y - mySprite.y) ** 2)<256)
-    //     res.pop()
-    scene.followPath(mySprite2, res, 200)
+    // scene.followPath(mySprite2, res, 200)
 })
 
 controller.B.onEvent(ControllerButtonEvent.Pressed, function () {
-    for (let l of res) {
+    for (let l of path) {
         tiles.setTileAt(l, sprites.castle.tilePath7)
         pause(50)
     }
