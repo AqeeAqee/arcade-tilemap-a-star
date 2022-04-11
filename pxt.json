@@ -21,7 +21,8 @@
     "testFiles": [
         "tilemap.g.jres",
         "tilemap.g.ts",
-        "test.ts"
+        "test.ts",
+        "test_origin.ts"
     ],
     "public": true,
     "targetVersions": {
