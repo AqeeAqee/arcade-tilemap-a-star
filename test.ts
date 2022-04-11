@@ -157,7 +157,7 @@ controller.B.onEvent(ControllerButtonEvent.Pressed, function () {
     // }
 })
 
-//copied from github:aqeeaqee//arcade-screenshot, for can't import dependent ext for test
+//copied from github:aqeeaqee//arcade-snapshot, for can't import dependent ext for test
 let hexChars="0123456789abcdef"
 function takeScreenshot(tranparentAsBlack:boolean=true) {
     console.log("img`")
