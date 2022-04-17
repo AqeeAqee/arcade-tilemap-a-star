@@ -125,8 +125,8 @@ namespace scene {
             const row = currLocation.loc.row;
             const col = currLocation.loc.col;
 
-            const neighborCost = currLocation.cost + 100;
-            const cornerCost = currLocation.cost + 141//.414213562373095;  //much faster
+            const neighborCost = currLocation.cost + 1000;
+            const cornerCost = currLocation.cost + 1414//1.414213562373095;  //much faster
 
             const dataForCurrLocation = encountedLocations[col][row];
 
@@ -216,7 +216,7 @@ namespace scene {
         const xDist = Math.abs(target.col - tile.col)
         const yDist = Math.abs(target.row - tile.row)
 
-        return Math.max(xDist, yDist) * 14 - Math.min(xDist, yDist) * 10
+        return Math.max(xDist, yDist) * 1000 - Math.min(xDist, yDist) * 414
         // return ((startCol - endCol) ** 2
         //     + (startRow - endRow) ** 2)
     }

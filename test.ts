@@ -83,24 +83,6 @@ mySprite2 = sprites.create(img`
     . . . . . . . . . . . c 1 b c .
     . . . . . . . . . . . . c c . .
 `, SpriteKind.Player)
-tiles.placeOnRandomTile(mySprite, img`
-    5 7 5 7 7 7 7 7 7 7 7 7 7 7 7 7
-    7 7 7 7 7 7 7 7 7 7 7 7 7 1 7 7
-    7 7 7 1 1 7 7 7 7 7 7 7 1 7 1 7
-    7 7 3 1 1 3 7 7 7 5 7 7 6 1 6 7
-    7 1 1 6 6 1 1 7 7 5 7 7 7 7 7 7
-    7 d 1 7 7 1 d 7 7 6 7 7 7 7 7 7
-    7 6 3 1 1 3 6 7 7 7 7 5 7 7 7 7
-    7 7 6 d d 6 7 7 7 7 5 5 6 7 7 7
-    7 7 7 7 7 7 7 1 7 7 5 6 7 7 7 7
-    7 7 7 7 7 7 1 7 1 7 7 7 1 1 7 7
-    7 7 1 7 7 7 6 1 6 7 7 3 1 1 3 7
-    7 1 7 1 7 7 7 7 7 7 1 1 6 6 1 1
-    7 6 1 6 7 7 7 7 7 7 d 1 7 7 1 d
-    7 7 7 7 7 7 7 7 7 7 6 3 1 1 3 6
-    7 7 7 7 7 7 7 7 7 7 7 6 d d 6 7
-    7 7 5 7 7 7 7 7 7 7 7 7 7 7 7 7
-`)
 const imgGround = img`
     5 7 5 7 7 7 7 7 7 7 7 7 7 7 7 7
     7 7 7 7 7 7 7 7 7 7 7 7 7 1 7 7
@@ -122,32 +104,40 @@ const imgGround = img`
 const resultSprite=sprites.create(image.create(screen.width,screen.height))
 resultSprite.setFlag(SpriteFlag.RelativeToCamera, true)
 
+while(1){
+    comparing()
+}
+
 /* run a-star 100 times, and show result as graphical
 *  red dots for optimized, yellow for origin
 *  x= time used in millisecond, y= steps of path
 */
 controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
     for (let i = 0; i < 100; i++) {
-        let loc=tiles.getRandomTileByType(imgGround)
-        let ms1 = 0, ms2 = 0
-
-        ms1 =control.millis()
-        path = scene_origin.aStar(tiles.getTileLocation(0, 0), loc)
-        ms1 =control.millis()-ms1
-
-        ms2 = control.millis()
-        path = scene.aStar(tiles.getTileLocation(0, 0), loc)
-        ms2 = control.millis() - ms2
-        
-        const y = path ? path.length:119
-        resultSprite.image.setPixel(ms1, y, 5)
-        resultSprite.image.setPixel(ms2, y, 2)
-
-        pause(1)
-
+        comparing()
     }
     // scene.followPath(mySprite2, res, 200)
 })
+
+function comparing(){
+    let loc = tiles.getRandomTileByType(imgGround)
+    let ms1 = 0, ms2 = 0
+
+    ms1 = control.micros()
+    path = scene_origin.aStar(tiles.getTileLocation(0, 0), loc)
+    ms1 = control.micros() - ms1
+
+    ms2 = control.micros()
+    path = scene.aStar(tiles.getTileLocation(0, 0), loc)
+    ms2 = control.micros() - ms2
+
+    const y = path ? path.length : 119
+    resultSprite.image.setPixel(ms1*1/1000, y, 5)
+    resultSprite.image.setPixel(ms2*1/1000, y, 2)
+
+    pause(1)
+
+}
 
 controller.B.onEvent(ControllerButtonEvent.Pressed, function () {
     takeScreenshot()
