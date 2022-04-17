@@ -100,7 +100,6 @@ namespace scene {
             // if (h > parent.extraCost) {
 
             // }
-            let ms = control.micros()
             consideredTiles.push(
                 new PrioritizedLocation(
                     l,
@@ -216,7 +215,7 @@ namespace scene {
         const xDist = Math.abs(target.col - tile.col)
         const yDist = Math.abs(target.row - tile.row)
 
-        return Math.max(xDist, yDist) * 1000 - Math.min(xDist, yDist) * 414
+        return Math.max(xDist, yDist) * 1000 + Math.min(xDist, yDist) * 414
         // return ((startCol - endCol) ** 2
         //     + (startRow - endRow) ** 2)
     }

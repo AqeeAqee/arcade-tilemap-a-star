@@ -15,10 +15,11 @@
         "docs/follow-path.md",
         "docs/sprite-percent-path-completed.md",
         "docs/sprite-is-following-path.md",
-        "docs/on-path-completion.md",
-        "a-star_origin.ts"
+        "docs/on-path-completion.md"
     ],
     "testFiles": [
+        "a-star_origin.ts",
+        "a-star_test.ts",
         "tilemap.g.jres",
         "tilemap.g.ts",
         "test.ts",
