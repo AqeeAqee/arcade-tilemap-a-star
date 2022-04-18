@@ -1,4 +1,5 @@
-namespace scene_test {
+// Add your code here
+namespace scene_imagetype {
     class PrioritizedLocation {
         constructor(
             public loc: tiles.Location,
@@ -32,7 +33,7 @@ namespace scene_test {
     //% group="Path Following" weight=10
     export function aStar(start: tiles.Location, end: tiles.Location, onTilesOf: Image = null) {
         const tm = game.currentScene().tileMap;
-        if (!tm || !start || !end || !isWalkable(end, onTilesOf, tm))
+        if (!tm || !start || !end || (!!onTilesOf && !isWalkable(end, getImageType(tm, onTilesOf), tm)))
             return undefined;
 
         return generalAStar(tm, start, onTilesOf,
@@ -57,13 +58,25 @@ namespace scene_test {
             });
     }
 
+    //tilemap.getImageType would add Image into tileset if it not exist in
+    function getImageType(tm: tiles.TileMap, img: Image) {
+        if (!img) return 99
+        const tileset = tm.data.getTileset();
+        for (let i = 0; i < tileset.length; i++)
+            if (tileset[i].equals(img)) return i;
+        return 99
+    }
+
     export function generalAStar(tm: tiles.TileMap, start: tiles.Location, onTilesOf: Image,
         heuristic: (tile: tiles.Location) => number,
         isEnd: (tile: tiles.Location) => boolean): tiles.Location[] {
 
-        if (!isWalkable(start, onTilesOf, tm)) {
-            return undefined;
-        }
+
+        const typeOnTilesOf = getImageType(tm, onTilesOf)
+
+        // if (!isWalkable(start,typeOnTilesOf, tm)) {
+        //     return undefined;
+        // }
 
         const consideredTiles = new Heap<PrioritizedLocation>(
             (a, b) => (a.cost + a.extraCost) - (b.cost + b.extraCost)
@@ -100,12 +113,12 @@ namespace scene_test {
             // if (h > parent.extraCost) {
 
             // }
-            // console.log([cost, h].join())
+            let ms = control.micros()
             consideredTiles.push(
                 new PrioritizedLocation(
                     l,
                     cost,
-                    h   //25=9; 40=5 50=8
+                    h * 100
                 )
             );
 
@@ -150,10 +163,10 @@ namespace scene_test {
             let bottomIsWall = false
 
             if (onTilesOf) {
-                leftIsWall = !isWalkable(left, onTilesOf, tm);
-                rightIsWall = !isWalkable(right, onTilesOf, tm);
-                topIsWall = !isWalkable(top, onTilesOf, tm);
-                bottomIsWall = !isWalkable(bottom, onTilesOf, tm);
+                leftIsWall = !isWalkable(left, typeOnTilesOf, tm);
+                rightIsWall = !isWalkable(right, typeOnTilesOf, tm);
+                topIsWall = !isWalkable(top, typeOnTilesOf, tm);
+                bottomIsWall = !isWalkable(bottom, typeOnTilesOf, tm);
             } else {
                 leftIsWall = tm.isObstacle(left.col, left.row);
                 rightIsWall = tm.isObstacle(right.col, right.row);
@@ -213,33 +226,12 @@ namespace scene_test {
         // const startRow = locationRow(tile);
         // const endCol =   locationCol(target);
         // const endRow =   locationRow(target);
-        // return ((startCol - endCol) ** 2
-        //     + (startRow - endRow) ** 2)
-
-
         const xDist = Math.abs(target.col - tile.col)
         const yDist = Math.abs(target.row - tile.row)
 
-        // sim: 1.3=98; 1.4=94; 1.5=89; 1.6=88; 1.7=92; 2=91; 4=89; <<1=90; <<2=93; 8=94; 100=98.5;  32=100; 
-        // return (Math.max(xDist, yDist) * 1000 + Math.min(xDist, yDist) * 414) * 1.6
-        // Meowbit: 99%
-        // return (Math.imul(Math.max(xDist, yDist), 1600) + Math.imul(Math.min(xDist, yDist) , 662))
-        // return (Math.imul(Math.max(xDist, yDist), (1000)) + Math.imul(Math.min(xDist, yDist) , (414))) // =1414-1000
-        // return (xDist+yDist)*24000
-
-        // return Math.max(xDist, yDist) * 2000 + Math.min(xDist, yDist) * 828 //M98.9% S88.0
-        
-        // //M98.6, S83.3
-        // if(xDist>yDist)
-        //     return xDist*2000+yDist*828
-        // else
-        //     return yDist*2000+xDist*828
-
-        if(xDist>yDist)
-            return Math.imul(xDist,2000)+Math.imul(yDist,828)
-        else
-            return Math.imul(yDist,2000)+Math.imul(xDist,828)
-
+        return Math.max(xDist, yDist) * 1000 + Math.min(xDist, yDist) * 414
+        // return ((startCol - endCol) ** 2
+        //     + (startRow - endRow) ** 2)
     }
 
     // TODO: these should probably be exposed on tiles.Location;
@@ -258,12 +250,9 @@ namespace scene_test {
     //     return tm.isObstacle(l.col, l.row) //(c, r);
     // }
 
-    function isWalkable(l: tiles.Location, onTilesOf: Image, tm: tiles.TileMap): boolean {
+    function isWalkable(l: tiles.Location, indexImageType: number, tm: tiles.TileMap): boolean {
         if (tm.isObstacle(l.col, l.row)) return false;
-        if (!onTilesOf) return true;
-        const img = tm.getTileImage(tm.getTileIndex(l.col, l.row))
-        return img.equals(onTilesOf);
+        if (indexImageType == 99) return true
+        return tm.getTileIndex(l.col, l.row) == indexImageType;
     }
 }
-
-

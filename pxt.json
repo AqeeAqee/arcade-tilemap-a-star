@@ -15,7 +15,9 @@
         "docs/follow-path.md",
         "docs/sprite-percent-path-completed.md",
         "docs/sprite-is-following-path.md",
-        "docs/on-path-completion.md"
+        "docs/on-path-completion.md",
+        "a-star_imagetype.ts",
+        "a-star_array.ts"
     ],
     "testFiles": [
         "a-star_origin.ts",

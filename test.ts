@@ -137,20 +137,20 @@ function comparing(){
     printSprite.image.fill(0)
 
     ms1 = control.micros()
-    path = scene1.aStar(tiles.getTileLocation(19, 17), loc)
+    path = scene.aStar(tiles.getTileLocation(19, 17), loc)
     ms1 = control.micros() - ms1
 
     ms2 = control.micros()
-    path = scene1.aStar(tiles.getTileLocation(19, 17), loc)
+    path = scene_array.aStar(tiles.getTileLocation(19, 17), loc)
     ms2 = control.micros() - ms2
+
+    ms1 = control.micros()
+    path = scene_array.aStar(tiles.getTileLocation(19, 17), loc)
+    ms1 = control.micros() - ms1
 
     ms2 = control.micros()
     path = scene.aStar(tiles.getTileLocation(19, 17), loc)
     ms2 = control.micros() - ms2
-
-    ms1 = control.micros()
-    path = scene2.aStar(tiles.getTileLocation(19, 17), loc)
-    ms1 = control.micros() - ms1
 
     if(path){
         count++
@@ -158,9 +158,9 @@ function comparing(){
         msTotal1+=ms1/100
     }
     const y = path ? path.length : 119
+    resultSprite.image.setPixel(ms1*1/1000, y, 10)
     resultSprite.image.setPixel(ms2*1/1000, y, 2)
     printSprite.image.print(msTotal2.toString(), 0, 10)
-    resultSprite.image.setPixel(ms1*1/1000, y, 5)
     printSprite.image.print(msTotal1.toString(), 0, 0)
     printSprite.image.print("%" +Math.roundWithPrecision(msTotal1 * 100 / msTotal2, 2).toString(), 0, 20)
     printSprite.image.print(count.toString(), 0, 30)

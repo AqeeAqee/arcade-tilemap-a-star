@@ -1,10 +1,11 @@
-namespace scene_test {
+namespace scene_array {
     class PrioritizedLocation {
         constructor(
             public loc: tiles.Location,
             public cost: number,
             // cost from heuristic
-            public extraCost: number
+            public extraCost: number,
+            public totalCost: number
         ) { }
     }
 
@@ -65,10 +66,11 @@ namespace scene_test {
             return undefined;
         }
 
-        const consideredTiles = new Heap<PrioritizedLocation>(
-            (a, b) => (a.cost + a.extraCost) - (b.cost + b.extraCost)
-            // (a, b) => (a.cost ** 2 + a.extraCost) - (b.cost ** 2 + b.extraCost)
-        );
+        // const consideredTiles = new Heap<PrioritizedLocation>(
+        //     (a, b) => (a.cost + a.extraCost) - (b.cost + b.extraCost)
+        //     // (a, b) => (a.cost ** 2 + a.extraCost) - (b.cost ** 2 + b.extraCost)
+        // );
+        const consideredTiles:Array < PrioritizedLocation>=[]
         const encountedLocations: LocationNode[][] = [[]];
 
         function updateOrFillLocation(l: tiles.Location, parent: LocationNode, cost: number) {
@@ -98,16 +100,31 @@ namespace scene_test {
             let h = heuristic(l);
             // need to store extra cost on location node too, and keep that up to date
             // if (h > parent.extraCost) {
-
             // }
-            // console.log([cost, h].join())
-            consideredTiles.push(
-                new PrioritizedLocation(
-                    l,
-                    cost,
-                    h   //25=9; 40=5 50=8
-                )
-            );
+            
+            // consideredTiles.push(
+            //     new PrioritizedLocation(
+            //         l,
+            //         cost,
+            //         h * 100,
+            //         cost+ h*100
+            //     )
+            // );
+
+            const newConsideredTile = new PrioritizedLocation(
+                l,
+                cost,
+                h * 100,
+                cost + h * 100
+            )
+
+            let i = 0
+            for(;i<consideredTiles.length;i++){
+                if (newConsideredTile.totalCost>consideredTiles[i].totalCost)
+                    break;
+            }
+            consideredTiles.insertAt(i,newConsideredTile)
+        
 
         }
         updateOrFillLocation(start, null, 0);
@@ -115,6 +132,7 @@ namespace scene_test {
         let end: tiles.Location = null;
         while (consideredTiles.length !== 0) {
 
+            // consideredTiles.sort((a, b) => { return b.totalCost - a.totalCost })
             const currLocation = consideredTiles.pop();
 
             if (isEnd(currLocation.loc)) {
@@ -213,33 +231,12 @@ namespace scene_test {
         // const startRow = locationRow(tile);
         // const endCol =   locationCol(target);
         // const endRow =   locationRow(target);
-        // return ((startCol - endCol) ** 2
-        //     + (startRow - endRow) ** 2)
-
-
         const xDist = Math.abs(target.col - tile.col)
         const yDist = Math.abs(target.row - tile.row)
 
-        // sim: 1.3=98; 1.4=94; 1.5=89; 1.6=88; 1.7=92; 2=91; 4=89; <<1=90; <<2=93; 8=94; 100=98.5;  32=100; 
-        // return (Math.max(xDist, yDist) * 1000 + Math.min(xDist, yDist) * 414) * 1.6
-        // Meowbit: 99%
-        // return (Math.imul(Math.max(xDist, yDist), 1600) + Math.imul(Math.min(xDist, yDist) , 662))
-        // return (Math.imul(Math.max(xDist, yDist), (1000)) + Math.imul(Math.min(xDist, yDist) , (414))) // =1414-1000
-        // return (xDist+yDist)*24000
-
-        // return Math.max(xDist, yDist) * 2000 + Math.min(xDist, yDist) * 828 //M98.9% S88.0
-        
-        // //M98.6, S83.3
-        // if(xDist>yDist)
-        //     return xDist*2000+yDist*828
-        // else
-        //     return yDist*2000+xDist*828
-
-        if(xDist>yDist)
-            return Math.imul(xDist,2000)+Math.imul(yDist,828)
-        else
-            return Math.imul(yDist,2000)+Math.imul(xDist,828)
-
+        return Math.max(xDist, yDist) * 1000 + Math.min(xDist, yDist) * 414
+        // return ((startCol - endCol) ** 2
+        //     + (startRow - endRow) ** 2)
     }
 
     // TODO: these should probably be exposed on tiles.Location;
@@ -265,5 +262,3 @@ namespace scene_test {
         return img.equals(onTilesOf);
     }
 }
-
-
