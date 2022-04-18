@@ -1,4 +1,4 @@
-
+//% blockHidden=true
 namespace scene_origin {
     class PrioritizedLocation {
         constructor(

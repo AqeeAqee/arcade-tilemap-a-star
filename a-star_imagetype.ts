@@ -1,4 +1,4 @@
-// Add your code here
+//% blockHidden=true
 namespace scene_imagetype {
     class PrioritizedLocation {
         constructor(

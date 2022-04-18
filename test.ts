@@ -43,6 +43,8 @@ let map = tiles.createTilemap(hex`2800280005000000000000000303000000000000000000
 `, [myTiles.transparency16, sprites.castle.tilePath7, sprites.castle.tilePath4, sprites.castle.tileGrass2, sprites.castle.tilePath8, sprites.builtin.forestTiles0, sprites.castle.tileDarkGrass2], TileScale.Sixteen);
 let mySprite2: Sprite = null
 let path: tiles.Location[] = []
+let path1: tiles.Location[] = []
+let path2: tiles.Location[] = []
 let count: number = 0
 tiles.setTilemap(map)
 let mySprite = sprites.create(img`
@@ -104,9 +106,9 @@ const imgGround = img`
 const resultSprite=sprites.create(image.create(screen.width,screen.height))
 resultSprite.setFlag(SpriteFlag.RelativeToCamera, true)
 
-let printSprite=sprites.create(image.create(60,40))
+let printSprite=sprites.create(image.create(60,50))
 printSprite.left=0
-printSprite.top=78
+printSprite.top=68
 let msTotal1=0, msTotal2=0
 while(1)
 {
@@ -121,52 +123,80 @@ while(1)
 *  x= time used in millisecond, y= steps of path
 */
 controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
-    for (let i = 0; i < 100; i++) {
+    // for (let i = 0; i < 100; i++) {
         comparing()
-    }
+    // }
     // scene.followPath(mySprite2, res, 200)
 })
 
 function comparing(){
-    let loc:tiles.Location
+    let locTarget:tiles.Location
     // do{
-    loc = tiles.getRandomTileByType(imgGround)
+    locTarget = tiles.getRandomTileByType(imgGround)
     // }while(loc.col>31||loc.row>31)
 
+    let locStart: tiles.Location
+    locStart = tiles.getRandomTileByType(imgGround)
+
     let ms1 = 0, ms2 = 0
+    ms2 = control.micros()
+    path = scene_origin.aStar(locStart, locTarget)
+    ms2 = control.micros() - ms2
+    if(!path) // ensure can go from start to target
+        return
+    if(path.length<10)  // too easy, skip
+        return
+        
     printSprite.image.fill(0)
 
     ms1 = control.micros()
-    path = scene.aStar(tiles.getTileLocation(19, 17), loc)
+    path1 = scene_array.aStar(locStart, locTarget)
     ms1 = control.micros() - ms1
 
     ms2 = control.micros()
-    path = scene_array.aStar(tiles.getTileLocation(19, 17), loc)
+    path2 = scene.aStar(locStart, locTarget)
     ms2 = control.micros() - ms2
-
-    ms1 = control.micros()
-    path = scene_array.aStar(tiles.getTileLocation(19, 17), loc)
-    ms1 = control.micros() - ms1
-
-    ms2 = control.micros()
-    path = scene.aStar(tiles.getTileLocation(19, 17), loc)
-    ms2 = control.micros() - ms2
-
-    if(path){
-        count++
-        msTotal2 += ms2/100
-        msTotal1+=ms1/100
+    
+    if(!path1){
+        game.splash("[e] failed to("+path.length + "):"+locTarget.col+","+locTarget.row)
+        return
     }
-    const y = path ? path.length : 119
+    if(!checkPath(path1)){
+        const srtPath= path1.map((loc)=>{"["+loc.col+","+loc.row+"] "}).join()
+        game.splash("[e] path(" + path1.length + "/" + path.length +"):"+srtPath + locTarget.col + "," + locTarget.row)
+        return
+    }
+    count++
+    msTotal2 += ms2/100
+    msTotal1+=ms1/100
+
+    const y = path1 ? path1.length : 119
     resultSprite.image.setPixel(ms1*1/1000, y, 10)
     resultSprite.image.setPixel(ms2*1/1000, y, 2)
     printSprite.image.print(msTotal2.toString(), 0, 10)
     printSprite.image.print(msTotal1.toString(), 0, 0)
     printSprite.image.print("%" +Math.roundWithPrecision(msTotal1 * 100 / msTotal2, 2).toString(), 0, 20)
-    printSprite.image.print(count.toString(), 0, 30)
+    printSprite.image.print((msTotal1 / 10 / count).toString(), 0, 30)
+
+    const xDist = Math.abs(locTarget.col - locStart.col)
+    const yDist = Math.abs(locTarget.row - locStart.row)
+    const h= Math.max(xDist, yDist) * 1000 + Math.min(xDist, yDist) * 414
+    printSprite.image.print((path1.length*1000/h).toString(), 0, 40)
 
     
     pause(1)
+}
+
+function checkPath(path: tiles.Location[]){
+    if(path.length<=1)
+        return false
+    for(let i=1;i<path.length;i++){
+        const xDist = Math.abs(path[i].col - path[i - 1].col)
+        const yDist = Math.abs(path[i].row - path[i - 1].row)
+        if(xDist>1||yDist>1||(xDist==0&&yDist==0))
+            return false
+    }
+    return true
 }
 
 controller.B.onEvent(ControllerButtonEvent.Pressed, function () {
