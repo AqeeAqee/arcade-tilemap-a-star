@@ -1,3 +1,4 @@
+// sim:17%, meowbit:6.5% ms comparing with origin
 namespace scene {
     class PrioritizedLocation {
         constructor(
@@ -104,7 +105,7 @@ namespace scene {
                 new PrioritizedLocation(
                     l,
                     cost,
-                    h * 100
+                    h * 40
                 )
             );
 

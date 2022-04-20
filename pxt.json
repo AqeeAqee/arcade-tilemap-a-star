@@ -8,7 +8,6 @@
     },
     "files": [
         "README.md",
-        "main.ts",
         "a-star.ts",
         "path-following.ts",
         "docs/a-star.md",
@@ -16,15 +15,18 @@
         "docs/sprite-percent-path-completed.md",
         "docs/sprite-is-following-path.md",
         "docs/on-path-completion.md",
-        "a-star_imagetype.ts",
-        "a-star_array.ts"
+        "a-star_bak.ts"
     ],
     "testFiles": [
+        "main.ts",
+        "a-star_imagetype.ts",
+        "a-star_array.ts",
+        "a-star_removeLocation.ts",
+        "a-star_mylocation.ts",
         "a-star_origin.ts",
         "a-star_test.ts",
         "tilemap.g.jres",
         "tilemap.g.ts",
-        "test.ts",
         "test_origin.ts"
     ],
     "public": true,
