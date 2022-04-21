@@ -67,7 +67,8 @@ namespace scene_origin {
         }
 
         const consideredTiles = new Heap<PrioritizedLocation>(
-            (a, b) => (a.cost ** 2 + a.extraCost) - (b.cost ** 2 + b.extraCost)
+            // (a, b) => Math.abs(a.cost + a.extraCost) - Math.abs(b.cost + b.extraCost)
+                (a, b) => (a.cost ** 2 + a.extraCost) - (b.cost ** 2 + b.extraCost)
         );
         const encountedLocations: LocationNode[][] = [[]];
 
@@ -211,8 +212,8 @@ namespace scene_origin {
         const endCol = locationCol(target);
         const endRow = locationRow(target);
 
-        return ((startCol - endCol) ** 2
-            + (startRow - endRow) ** 2)
+        // return (Math.abs(startCol - endCol) + Math.abs(startRow - endRow))
+        return ((startCol - endCol) ** 2+ (startRow - endRow) **2)
     }
 
     // TODO: these should probably be exposed on tiles.Location;

@@ -1,10 +1,11 @@
-namespace scene_test {
+//+array sim:19%, meowbit:12% ms comparing with origin
+namespace scene_seekhalf {
     class PrioritizedLocation {
         constructor(
             public loc: tiles.Location,
             public cost: number,
-            // cost from heuristic
-            public extraCost: number
+            // public extraCost: number // cost from heuristic
+            public totalCost: number  //cost+heuristic
         ) { }
     }
 
@@ -65,10 +66,8 @@ namespace scene_test {
             return undefined;
         }
 
-        const consideredTiles = new Heap<PrioritizedLocation>(
-            (a, b) => (a.cost + a.extraCost) - (b.cost + b.extraCost)
-            // (a, b) => (a.cost ** 2 + a.extraCost) - (b.cost ** 2 + b.extraCost)
-        );
+        //changed to array, sim:50%, Meowbit:98.5%
+        const consideredTiles: Array<PrioritizedLocation> = []
         const encountedLocations: LocationNode[][] = [[]];
 
         function updateOrFillLocation(l: tiles.Location, parent: LocationNode, cost: number) {
@@ -95,21 +94,67 @@ namespace scene_test {
                 return;
             }
 
-            let h = heuristic(l);
-            // need to store extra cost on location node too, and keep that up to date
-            // if (h > parent.extraCost) {
+            const newConsideredTile = new PrioritizedLocation(
+                l,
+                cost,
+                cost + heuristic(l)
+            )
 
+
+            // if (consideredTiles.length == 0) {
+            //     consideredTiles.push(newConsideredTile)
+            //     return
             // }
-            // console.log([cost, h].join())
-            consideredTiles.push(
-                new PrioritizedLocation(
-                    l,
-                    cost,
-                    h  //*50 !wrong path.  sim: 4=60%,6=57%,8=53%,10=52%, 12=52%, 16=53%,40=51.5%, 50=50.9%, 70=51%, 100=51.5%,
-                )
-            );
+            // let i = consideredTiles.length - 1
+            // for (; i >= 0; i--) {  //seek&insert from end, last N are more possible hit
+            //     if (newConsideredTile.totalCost < consideredTiles[i].totalCost) {
+            //         consideredTiles.insertAt(i + 1, newConsideredTile)
+            //         break;
+            //     }
+            // }
+            // if (i < 0) 
+            //     consideredTiles.insertAt(0, newConsideredTile)
 
+            //todo, bug
+            // seek half->half
+            let strBefore = consideredTiles.map(v => v.totalCost).join()
+            strBefore = consideredTiles.length + " " + strBefore
+            let strAfter = ""
+            const len = consideredTiles.length, considers = consideredTiles
+            if (consideredTiles.length == 0) {
+                consideredTiles.push(newConsideredTile)
+                // return
+            } else if (consideredTiles.length == 1) {
+                consideredTiles.insertAt(newConsideredTile.totalCost < consideredTiles[0].totalCost ? 1 : 0, newConsideredTile)
+                // return
+            } else {
+                let i = consideredTiles.length - 1, step = (consideredTiles.length / 2)
+                for (; ;) {
+                    if (step == 0) game.splash("overfloat" + i + "(" + len + ") " + step)
+                    if (i >= len) i = len - 1
+                    if (i < 0) i = 0
+                    if (newConsideredTile.totalCost <= consideredTiles[Math.floor(i)].totalCost) {
+                        if (step < 1) {
+                            consideredTiles.insertAt(Math.floor(i) + 1, newConsideredTile)
+                            break;
+                        } else
+                            step = (step / 2)
+                        i += step
+                    } else {
+                        if (step < 1) {
+                            consideredTiles.insertAt(Math.floor(i), newConsideredTile)
+                            break;
+                        } else
+                            step = (step / 2)
+                        i -= step
+                    }
+                }
+                strAfter = consideredTiles.map(v => v.totalCost).join()
+                game.showLongText(i + "/" + consideredTiles.length + "/" + step + " (" + newConsideredTile.totalCost + ")\n" + strBefore + " \n->\n" + strAfter, DialogLayout.Center)
+            }
+            if (consideredTiles.length - len != 1) game.splash("inser failed")
         }
+
         updateOrFillLocation(start, null, 0);
 
         let end: tiles.Location = null;
@@ -213,33 +258,12 @@ namespace scene_test {
         // const startRow = locationRow(tile);
         // const endCol =   locationCol(target);
         // const endRow =   locationRow(target);
-        // return ((startCol - endCol) ** 2
-        //     + (startRow - endRow) ** 2)
-
-
         const xDist = Math.abs(target.col - tile.col)
         const yDist = Math.abs(target.row - tile.row)
 
-        // sim: 1.3=98; 1.4=94; 1.5=89; 1.6=88; 1.7=92; 2=91; 4=89; <<1=90; <<2=93; 8=94; 100=98.5;  32=100; 
-        // return (Math.max(xDist, yDist) * 1000 + Math.min(xDist, yDist) * 414) * 1.6
-        // Meowbit: 99%
-        // return (Math.imul(Math.max(xDist, yDist), 1600) + Math.imul(Math.min(xDist, yDist) , 662))
-        // return (Math.imul(Math.max(xDist, yDist), (1000)) + Math.imul(Math.min(xDist, yDist) , (414))) // =1414-1000
-        // return (xDist+yDist)*24000
-
-        // return Math.max(xDist, yDist) * 2000 + Math.min(xDist, yDist) * 828 //M98.9% S88.0
-        
-        // //M98.6, S83.3
-        // if(xDist>yDist)
-        //     return xDist*2000+yDist*828
-        // else
-        //     return yDist*2000+xDist*828
-
-        if(xDist>yDist)
-            return Math.imul(xDist,2000)+Math.imul(yDist,828)
-        else
-            return Math.imul(yDist,2000)+Math.imul(xDist,828)
-
+        return Math.max(xDist, yDist) * 1000 + Math.min(xDist, yDist) * 414
+        // return ((startCol - endCol) ** 2
+        //     + (startRow - endRow) ** 2)
     }
 
     // TODO: these should probably be exposed on tiles.Location;
@@ -265,5 +289,3 @@ namespace scene_test {
         return img.equals(onTilesOf);
     }
 }
-
-

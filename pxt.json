@@ -15,7 +15,9 @@
         "docs/sprite-percent-path-completed.md",
         "docs/sprite-is-following-path.md",
         "docs/on-path-completion.md",
-        "a-star_bak.ts"
+        "a-star_bak.ts",
+        "a-star_comboLoc.ts",
+        "a-star_seekhalf.ts"
     ],
     "testFiles": [
         "main.ts",

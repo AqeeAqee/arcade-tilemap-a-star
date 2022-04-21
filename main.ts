@@ -47,12 +47,13 @@ let path: tiles.Location[] = []
 let path1: tiles.Location[] = []
 let path2: tiles.Location[] = []
 let count: number = 0
-tiles.setTilemap(map)
+// tiles.setTilemap(map)
+tiles.setTilemap(tilemap`level2`)
 let mySprite = sprites.create(img`
     . . . . . . . . . . . . . . . .
     . . . . . . . . . . . . . . . .
     . . . . . . . . . . . . . . . .
-    . . . . . . . . . . . . . . . .
+    3 . . . . . . . . . . . . . . .
     . . . . . . . . . . . . . . . .
     . . . . . a a a a a . . . . . .
     . . . . . a c c c a . . . . . .
@@ -107,9 +108,13 @@ const imgGround = img`
 const resultSprite = sprites.create(image.create(screen.width, screen.height))
 resultSprite.setFlag(SpriteFlag.RelativeToCamera, true)
 
-let printSprite = sprites.create(image.create(60, 50))
+let printSprite = sprites.create(image.create(60, 40))
 printSprite.left = 0
-printSprite.top = 68
+printSprite.bottom = 120
+let pathSprite = sprites.create(image.create(32, 40))
+pathSprite.setScale(3)
+pathSprite.left=0
+pathSprite.right=160
 let msTotal1 = 0, msTotal2 = 0
 while (1) {
     comparing()
@@ -151,7 +156,7 @@ function comparing() {
     printSprite.image.fill(0)
 
     ms1 = control.micros()
-    path1 = scene_array.aStar(locStart, locTarget)
+    path1 = scene.aStar(locStart, locTarget)
     ms1 = control.micros() - ms1
 
     ms2 = control.micros()
@@ -168,24 +173,51 @@ function comparing() {
         return
     }
     count++
-    msTotal2 += ms2 / 100
-    msTotal1 += ms1 / 100
+    ms2/=1000
+    ms1/=1000
+    msTotal2 += ms2 
+    msTotal1 += ms1 
 
     const y = path1 ? path1.length : 119
-    resultSprite.image.setPixel(ms1 * 1 / 1000, y, 10)
-    resultSprite.image.setPixel(ms2 * 1 / 1000, y, 2)
+    let c1 = resultSprite.image.getPixel(ms1, y)
+    resultSprite.image.setPixel(ms1, y, (c1==5||c1==7)?7:8)
+    let c2 = resultSprite.image.getPixel(ms2, y)
+    resultSprite.image.setPixel(ms2, y, (c2 == 8 ||c2==7)?7 :5)
     printSprite.image.print(msTotal1.toString(), 0, 0)
     printSprite.image.print(msTotal2.toString(), 0, 10)
     printSprite.image.print("%" + Math.roundWithPrecision(msTotal1 * 100 / msTotal2, 2).toString(), 0, 20)
     printSprite.image.print((msTotal1 / 10 / count).toString(), 0, 30)
 
-    const xDist = Math.abs(locTarget.col - locStart.col)
-    const yDist = Math.abs(locTarget.row - locStart.row)
-    const h = Math.max(xDist, yDist) * 1000 + Math.min(xDist, yDist) * 414
-    printSprite.image.print((path1.length * 1000 / h).toString(), 0, 40)
-
+    pathSprite.setFlag(SpriteFlag.Invisible, false)
+    comparePaths(path, path1)
+    if(path1.length>path.length){
+        // console.log("[e] length: " + path.length + ":" + path1.length + "[" + locStart.col + "," + locStart.row + "]->" + "[" + locTarget.col + "," + locTarget.row + "]" )
+        // const srtPath1 = path1.map((loc) => { return "[" + loc.col + "," + loc.row + "]" }).join()
+        controller.pauseUntilAnyButtonIsPressed()
+        return
+    }
 
     pause(1)
+}
+
+function comparePaths(path:tiles.Location[], path1:tiles.Location[]){
+    pathSprite.image.fill(15)
+    path.forEach((loc) => { pathSprite.image.setPixel(loc.col, loc.row, tiles.tileAtLocationIsWall(loc) ? 2 : 5) })
+    path1.forEach((loc) => { pathSprite.image.setPixel(loc.col, loc.row, pathSprite.image.getPixel(loc.col, loc.row) == 5 ? 7 : 8) })
+    for (let x = 0; x < 40; x++)
+        for (let y = 0; y < 40; y++) {
+            let w = game.currentScene().tileMap.data.isWall(x, y)
+            if (w) {
+                let c = pathSprite.image.getPixel(x, y)
+                if (c == 5) c = 3
+                else if (c == 8) c = 10
+                else if (c == 15) c = 2
+                pathSprite.image.setPixel(x, y, c)
+            }
+        }
+    pathSprite.image.setPixel(path1[0].col, path1[0].row, 1)
+    pathSprite.image.setPixel(path1[path1.length-1].col, path1[path1.length-1].row, 9)
+    pathSprite.image.print(path.length + ":" + path1.length ,0,pathSprite.image.height-8)
 }
 
 function checkPath(path: tiles.Location[]) {

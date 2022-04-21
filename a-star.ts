@@ -1,11 +1,11 @@
-// sim:17%, meowbit:6.5% ms comparing with origin
+//+array+SimpleLocation sim:7.5%, meowbit:10.5% ms comparing with origin
 namespace scene {
     class PrioritizedLocation {
         constructor(
-            public loc: tiles.Location,
+            public loc: SimpleLocation,
             public cost: number,
-            // cost from heuristic
-            public extraCost: number
+            // public extraCost: number // cost from heuristic
+            public totalCost: number  //cost+heuristic
         ) { }
     }
 
@@ -13,12 +13,16 @@ namespace scene {
         public visited: boolean;
 
         constructor(
-            public l: tiles.Location,
+            public l: SimpleLocation,
             public parent: LocationNode,
             public lastCost: number
         ) {
             this.visited = false;
         }
+    }
+
+    class SimpleLocation {
+        constructor(public col: number, public row: number) { }
     }
 
     /**
@@ -33,46 +37,50 @@ namespace scene {
     //% group="Path Following" weight=10
     export function aStar(start: tiles.Location, end: tiles.Location, onTilesOf: Image = null) {
         const tm = game.currentScene().tileMap;
-        if (!tm || !start || !end || !isWalkable(end, onTilesOf, tm))
+        if (!tm || !start || !end)
             return undefined;
 
-        return generalAStar(tm, start, onTilesOf,
-            t => tileLocationHeuristic(t, end),
-            l => l.x === end.x && l.y === end.y);
+        const end1 = new SimpleLocation(end.col, end.row)
+        const start1 = new SimpleLocation(start.col, start.row)
+        if (!isWalkable(end1, onTilesOf, tm))
+            return undefined;
+
+        return generalAStar(tm, start1, onTilesOf,
+            t => tileLocationHeuristic(t, end1),
+            l => l.col == end1.col && l.row == end1.row);
     }
 
     export function aStarToAnyOfType(start: tiles.Location, tile: Image, onTilesOf: Image) {
         const tm = game.currentScene().tileMap;
         if (!tm || !start)
             return undefined;
+        const start1 = new SimpleLocation(start.col, start.row)
         const endIndex = tm.getImageType(tile);
         const potentialEndPoints = tm.getTilesByType(endIndex);
 
         if (!potentialEndPoints || potentialEndPoints.length === 0)
             return undefined;
 
-        return generalAStar(tm, start, onTilesOf,
+        return generalAStar(tm, start1, onTilesOf,
             t => 0,
             l => {
                 return endIndex === tm.getTileIndex((l as any)._col, (l as any)._row)
             });
     }
 
-    export function generalAStar(tm: tiles.TileMap, start: tiles.Location, onTilesOf: Image,
-        heuristic: (tile: tiles.Location) => number,
-        isEnd: (tile: tiles.Location) => boolean): tiles.Location[] {
+    export function generalAStar(tm: tiles.TileMap, start: SimpleLocation, onTilesOf: Image,
+        heuristic: (tile: SimpleLocation) => number,
+        isEnd: (tile: SimpleLocation) => boolean): tiles.Location[] {
 
         if (!isWalkable(start, onTilesOf, tm)) {
             return undefined;
         }
 
-        const consideredTiles = new Heap<PrioritizedLocation>(
-            (a, b) => (a.cost + a.extraCost) - (b.cost + b.extraCost)
-            // (a, b) => (a.cost ** 2 + a.extraCost) - (b.cost ** 2 + b.extraCost)
-        );
+        //changed to array, sim:50%, Meowbit:98.5%
+        const consideredTiles: Array<PrioritizedLocation> = []
         const encountedLocations: LocationNode[][] = [[]];
 
-        function updateOrFillLocation(l: tiles.Location, parent: LocationNode, cost: number) {
+        function updateOrFillLocation(l: SimpleLocation, parent: LocationNode, cost: number) {
             const row = l.row;
             const col = l.col;
 
@@ -89,30 +97,38 @@ namespace scene {
                     parent,
                     cost
                 );
-            } else if (!lData.visited && lData.lastCost > cost) {//!lData.visited &&
+            } else if (!lData.visited && lData.lastCost > cost) {
                 lData.lastCost = cost;
                 lData.parent = parent;
             } else {
                 return;
             }
 
-            let h = heuristic(l);
-            // need to store extra cost on location node too, and keep that up to date
-            // if (h > parent.extraCost) {
+            const newConsideredTile = new PrioritizedLocation(
+                l,
+                cost,
+                cost + heuristic(l)
+            )
 
-            // }
-            consideredTiles.push(
-                new PrioritizedLocation(
-                    l,
-                    cost,
-                    h * 40
-                )
-            );
 
+            if (consideredTiles.length == 0) {
+                consideredTiles.push(newConsideredTile)
+                return
+            }
+            let i = consideredTiles.length - 1
+            for (; i >= 0; i--) {  //seek&insert from end, last N are more possible hit
+                if (newConsideredTile.totalCost < consideredTiles[i].totalCost) {
+                    consideredTiles.insertAt(i + 1, newConsideredTile)
+                    return;
+                }
+            }
+            if (i < 0) 
+                consideredTiles.insertAt(0, newConsideredTile)
         }
+
         updateOrFillLocation(start, null, 0);
 
-        let end: tiles.Location = null;
+        let end: SimpleLocation = null;
         while (consideredTiles.length !== 0) {
 
             const currLocation = consideredTiles.pop();
@@ -133,16 +149,12 @@ namespace scene {
             if (dataForCurrLocation && dataForCurrLocation.visited) {
                 continue;
             }
-
             dataForCurrLocation.visited = true;
 
-            const neighbors: tiles.Location[] = [];
-            const corners: tiles.Location[] = [];
-
-            const left = tiles.getTileLocation(col - 1, row);
-            const right = tiles.getTileLocation(col + 1, row);
-            const top = tiles.getTileLocation(col, row - 1);
-            const bottom = tiles.getTileLocation(col, row + 1);
+            const left = new SimpleLocation(col - 1, row);
+            const right = new SimpleLocation(col + 1, row);
+            const top = new SimpleLocation(col, row - 1);
+            const bottom = new SimpleLocation(col, row + 1);
 
             let leftIsWall = false
             let rightIsWall = false
@@ -163,11 +175,11 @@ namespace scene {
             if (!leftIsWall) {
                 updateOrFillLocation(left, dataForCurrLocation, neighborCost);
                 if (!topIsWall) {
-                    const topLeft = tiles.getTileLocation(col - 1, row - 1);
+                    const topLeft = new SimpleLocation(col - 1, row - 1);
                     if (!tm.isObstacle(topLeft.col, topLeft.row)) updateOrFillLocation(topLeft, dataForCurrLocation, cornerCost);
                 }
                 if (!bottomIsWall) {
-                    const bottomLeft = tiles.getTileLocation(col - 1, row + 1);
+                    const bottomLeft = new SimpleLocation(col - 1, row + 1);
                     if (!tm.isObstacle(bottomLeft.col, bottomLeft.row)) updateOrFillLocation(bottomLeft, dataForCurrLocation, cornerCost);
                 }
             }
@@ -175,11 +187,11 @@ namespace scene {
             if (!rightIsWall) {
                 updateOrFillLocation(right, dataForCurrLocation, neighborCost);
                 if (!topIsWall) {
-                    const topRight = tiles.getTileLocation(col + 1, row - 1);
+                    const topRight = new SimpleLocation(col + 1, row - 1);
                     if (!tm.isObstacle(topRight.col, topRight.row)) updateOrFillLocation(topRight, dataForCurrLocation, cornerCost);
                 }
                 if (!bottomIsWall) {
-                    const bottomRight = tiles.getTileLocation(col + 1, row + 1);
+                    const bottomRight = new SimpleLocation(col + 1, row + 1);
                     if (!tm.isObstacle(bottomRight.col, bottomRight.row)) updateOrFillLocation(bottomRight, dataForCurrLocation, cornerCost);
                 }
             }
@@ -198,49 +210,26 @@ namespace scene {
         let curr = endDataNode;
 
         // otherwise trace back path to end
-        const output = [];
+        const output:tiles.Location[] = [];
 
         while (curr) {
-            output.unshift(curr.l);
+            output.unshift(new tiles.Location(curr.l.col, curr.l.row, tm));
             curr = curr.parent;
         }
 
         return output;
     }
 
-    function tileLocationHeuristic(tile: tiles.Location, target: tiles.Location) {
-        // const startCol = locationCol(tile);
-        // const startRow = locationRow(tile);
-        // const endCol =   locationCol(target);
-        // const endRow =   locationRow(target);
+    function tileLocationHeuristic(tile: SimpleLocation, target: SimpleLocation) {
         const xDist = Math.abs(target.col - tile.col)
         const yDist = Math.abs(target.row - tile.row)
-
         return Math.max(xDist, yDist) * 1000 + Math.min(xDist, yDist) * 414
-        // return ((startCol - endCol) ** 2
-        //     + (startRow - endRow) ** 2)
     }
 
-    // TODO: these should probably be exposed on tiles.Location;
-    // no reason for them to be hidden
-    // function locationRow(l: tiles.Location): number {
-    //     return l.y >> 4;
-    // }
-
-    // function locationCol(l: tiles.Location): number {
-    //     return l.x >> 4;
-    // }
-
-    // function isWall(l: tiles.Location, tm: tiles.TileMap) {
-    //     // const r = l.col // locationRow(l);
-    //     // const c = l.row // locationCol(l);
-    //     return tm.isObstacle(l.col, l.row) //(c, r);
-    // }
-
-    function isWalkable(l: tiles.Location, onTilesOf: Image, tm: tiles.TileMap): boolean {
-        if (tm.isObstacle(l.col, l.row)) return false;
+    function isWalkable(loc: SimpleLocation, onTilesOf: Image, tm: tiles.TileMap): boolean {
+        if (tm.isObstacle(loc.col, loc.row)) return false;
         if (!onTilesOf) return true;
-        const img = tm.getTileImage(tm.getTileIndex(l.col, l.row))
+        const img = tm.getTileImage(tm.getTileIndex(loc.col, loc.row))
         return img.equals(onTilesOf);
     }
 }

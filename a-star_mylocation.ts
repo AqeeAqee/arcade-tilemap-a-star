@@ -60,7 +60,6 @@ namespace scene_MyLocation {
     //         });
     // }
 
-    //todo, change to [col,row]
     class MyLocation {
         constructor(public col: number, public row: number) { }
     }
@@ -98,7 +97,7 @@ namespace scene_MyLocation {
                     parent,
                     cost
                 );
-            } else if (!lData.visited && lData.lastCost > cost) {//!lData.visited &&
+            } else if (!lData.visited &&lData.lastCost > cost) {//!lData.visited &&
                 lData.lastCost = cost;
                 lData.parent = parent;
             } else {

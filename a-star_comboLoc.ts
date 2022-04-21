@@ -1,21 +1,15 @@
-namespace scene_test {
+//meowbit: 128%, sim: 96%, comparing with MyLocation
+namespace scene_comboLoc {
     class PrioritizedLocation {
-        constructor(
-            public loc: tiles.Location,
-            public cost: number,
-            // cost from heuristic
-            public extraCost: number
-        ) { }
-    }
-
-    class LocationNode {
         public visited: boolean;
-
         constructor(
-            public l: tiles.Location,
-            public parent: LocationNode,
-            public lastCost: number
-        ) {
+            public col: number,
+            public row: number,
+            public cost?: number,
+            // cost from heuristic
+            public extraCost?: number,
+            public parent?: PrioritizedLocation,
+        ) { 
             this.visited = false;
         }
     }
@@ -30,36 +24,40 @@ namespace scene_test {
     //% onTilesOf.decompileIndirectFixedInstances=true
     //% help=github:arcade-tilemap-a-star/docs/a-star
     //% group="Path Following" weight=10
-    export function aStar(start: tiles.Location, end: tiles.Location, onTilesOf: Image = null) {
+    export function aStar(start1: tiles.Location, end1: tiles.Location, onTilesOf: Image = null) {
         const tm = game.currentScene().tileMap;
+        const end = new PrioritizedLocation(end1.col, end1.row)
+        const start = new PrioritizedLocation(start1.col, start1.row)
         if (!tm || !start || !end || !isWalkable(end, onTilesOf, tm))
             return undefined;
 
         return generalAStar(tm, start, onTilesOf,
             t => tileLocationHeuristic(t, end),
-            l => l.x === end.x && l.y === end.y);
+            l => l.col == end.col && l.row == end.row);
     }
 
-    export function aStarToAnyOfType(start: tiles.Location, tile: Image, onTilesOf: Image) {
-        const tm = game.currentScene().tileMap;
-        if (!tm || !start)
-            return undefined;
-        const endIndex = tm.getImageType(tile);
-        const potentialEndPoints = tm.getTilesByType(endIndex);
+    // export function aStarToAnyOfType(start: tiles.Location, tile: Image, onTilesOf: Image) {
+    //     const tm = game.currentScene().tileMap;
+    //     if (!tm || !start)
+    //         return undefined;
+    //     const endIndex = tm.getImageType(tile);
+    //     const potentialEndPoints = tm.getTilesByType(endIndex);
 
-        if (!potentialEndPoints || potentialEndPoints.length === 0)
-            return undefined;
+    //     if (!potentialEndPoints || potentialEndPoints.length === 0)
+    //         return undefined;
 
-        return generalAStar(tm, start, onTilesOf,
-            t => 0,
-            l => {
-                return endIndex === tm.getTileIndex((l as any)._col, (l as any)._row)
-            });
-    }
+    //     return generalAStar(tm, start, onTilesOf,
+    //         t => 0,
+    //         l => {
+    //             return endIndex === tm.getTileIndex((l as any)._col, (l as any)._row)
+    //         });
+    // }
 
-    export function generalAStar(tm: tiles.TileMap, start: tiles.Location, onTilesOf: Image,
-        heuristic: (tile: tiles.Location) => number,
-        isEnd: (tile: tiles.Location) => boolean): tiles.Location[] {
+    export function generalAStar(tm: tiles.TileMap, start: PrioritizedLocation, onTilesOf: Image,
+        heuristic: (tile: PrioritizedLocation) => number,
+        isEnd: (tile: PrioritizedLocation) => boolean): tiles.Location[] {
+
+        let countDebug = 0
 
         if (!isWalkable(start, onTilesOf, tm)) {
             return undefined;
@@ -69,11 +67,11 @@ namespace scene_test {
             (a, b) => (a.cost + a.extraCost) - (b.cost + b.extraCost)
             // (a, b) => (a.cost ** 2 + a.extraCost) - (b.cost ** 2 + b.extraCost)
         );
-        const encountedLocations: LocationNode[][] = [[]];
+        const encountedLocations: PrioritizedLocation[][] = [[]];
 
-        function updateOrFillLocation(l: tiles.Location, parent: LocationNode, cost: number) {
-            const row = l.row;
-            const col = l.col;
+        function updateOrFillLocation(loc: PrioritizedLocation, parent: PrioritizedLocation, cost: number) {
+            const row = loc.row;
+            const col = loc.col;
 
             // if (tm.isObstacle(col, row)) {
             //     return;
@@ -83,47 +81,46 @@ namespace scene_test {
             const lData = colData[row];
 
             if (!lData) {
-                colData[row] = new LocationNode(
-                    l,
-                    parent,
-                    cost
-                );
-            } else if (!lData.visited && lData.lastCost > cost) {//!lData.visited &&
-                lData.lastCost = cost;
+                loc.parent=parent
+                loc.cost=cost
+                colData[row] = loc
+            } else if (!lData.visited && lData.cost > cost) {//!lData.visited &&
+                lData.cost = cost;
                 lData.parent = parent;
             } else {
                 return;
             }
 
-            let h = heuristic(l);
+            let h = heuristic(loc);
             // need to store extra cost on location node too, and keep that up to date
             // if (h > parent.extraCost) {
 
             // }
-            // console.log([cost, h].join())
             consideredTiles.push(
                 new PrioritizedLocation(
-                    l,
+                    loc.col,
+                    loc.row,
                     cost,
-                    h  //*50 !wrong path.  sim: 4=60%,6=57%,8=53%,10=52%, 12=52%, 16=53%,40=51.5%, 50=50.9%, 70=51%, 100=51.5%,
+                    h 
                 )
             );
 
         }
         updateOrFillLocation(start, null, 0);
 
-        let end: tiles.Location = null;
+        let end: PrioritizedLocation = null;
+
         while (consideredTiles.length !== 0) {
 
             const currLocation = consideredTiles.pop();
 
-            if (isEnd(currLocation.loc)) {
-                end = currLocation.loc;
+            if (isEnd(currLocation)) {
+                end = currLocation
                 break;
             }
 
-            const row = currLocation.loc.row;
-            const col = currLocation.loc.col;
+            const row = currLocation.row;
+            const col = currLocation.col;
 
             const neighborCost = currLocation.cost + 1000;
             const cornerCost = currLocation.cost + 1414//1.414213562373095;  //much faster
@@ -136,13 +133,10 @@ namespace scene_test {
 
             dataForCurrLocation.visited = true;
 
-            const neighbors: tiles.Location[] = [];
-            const corners: tiles.Location[] = [];
-
-            const left = tiles.getTileLocation(col - 1, row);
-            const right = tiles.getTileLocation(col + 1, row);
-            const top = tiles.getTileLocation(col, row - 1);
-            const bottom = tiles.getTileLocation(col, row + 1);
+            const left = new PrioritizedLocation(col - 1, row);
+            const right = new PrioritizedLocation(col + 1, row);
+            const top = new PrioritizedLocation(col, row - 1);
+            const bottom = new PrioritizedLocation(col, row + 1);
 
             let leftIsWall = false
             let rightIsWall = false
@@ -163,11 +157,11 @@ namespace scene_test {
             if (!leftIsWall) {
                 updateOrFillLocation(left, dataForCurrLocation, neighborCost);
                 if (!topIsWall) {
-                    const topLeft = tiles.getTileLocation(col - 1, row - 1);
+                    const topLeft = new PrioritizedLocation(col - 1, row - 1);
                     if (!tm.isObstacle(topLeft.col, topLeft.row)) updateOrFillLocation(topLeft, dataForCurrLocation, cornerCost);
                 }
                 if (!bottomIsWall) {
-                    const bottomLeft = tiles.getTileLocation(col - 1, row + 1);
+                    const bottomLeft = new PrioritizedLocation(col - 1, row + 1);
                     if (!tm.isObstacle(bottomLeft.col, bottomLeft.row)) updateOrFillLocation(bottomLeft, dataForCurrLocation, cornerCost);
                 }
             }
@@ -175,11 +169,11 @@ namespace scene_test {
             if (!rightIsWall) {
                 updateOrFillLocation(right, dataForCurrLocation, neighborCost);
                 if (!topIsWall) {
-                    const topRight = tiles.getTileLocation(col + 1, row - 1);
+                    const topRight = new PrioritizedLocation(col + 1, row - 1);
                     if (!tm.isObstacle(topRight.col, topRight.row)) updateOrFillLocation(topRight, dataForCurrLocation, cornerCost);
                 }
                 if (!bottomIsWall) {
-                    const bottomRight = tiles.getTileLocation(col + 1, row + 1);
+                    const bottomRight = new PrioritizedLocation(col + 1, row + 1);
                     if (!tm.isObstacle(bottomRight.col, bottomRight.row)) updateOrFillLocation(bottomRight, dataForCurrLocation, cornerCost);
                 }
             }
@@ -198,48 +192,26 @@ namespace scene_test {
         let curr = endDataNode;
 
         // otherwise trace back path to end
-        const output = [];
+        const output: tiles.Location[] = [];
 
         while (curr) {
-            output.unshift(curr.l);
+            output.unshift(new tiles.Location(curr.col, curr.row, tm));
             curr = curr.parent;
         }
-
         return output;
     }
 
-    function tileLocationHeuristic(tile: tiles.Location, target: tiles.Location) {
+    function tileLocationHeuristic(tile: PrioritizedLocation, target: PrioritizedLocation) {
         // const startCol = locationCol(tile);
         // const startRow = locationRow(tile);
         // const endCol =   locationCol(target);
         // const endRow =   locationRow(target);
-        // return ((startCol - endCol) ** 2
-        //     + (startRow - endRow) ** 2)
-
-
         const xDist = Math.abs(target.col - tile.col)
         const yDist = Math.abs(target.row - tile.row)
 
-        // sim: 1.3=98; 1.4=94; 1.5=89; 1.6=88; 1.7=92; 2=91; 4=89; <<1=90; <<2=93; 8=94; 100=98.5;  32=100; 
-        // return (Math.max(xDist, yDist) * 1000 + Math.min(xDist, yDist) * 414) * 1.6
-        // Meowbit: 99%
-        // return (Math.imul(Math.max(xDist, yDist), 1600) + Math.imul(Math.min(xDist, yDist) , 662))
-        // return (Math.imul(Math.max(xDist, yDist), (1000)) + Math.imul(Math.min(xDist, yDist) , (414))) // =1414-1000
-        // return (xDist+yDist)*24000
-
-        // return Math.max(xDist, yDist) * 2000 + Math.min(xDist, yDist) * 828 //M98.9% S88.0
-        
-        // //M98.6, S83.3
-        // if(xDist>yDist)
-        //     return xDist*2000+yDist*828
-        // else
-        //     return yDist*2000+xDist*828
-
-        if(xDist>yDist)
-            return Math.imul(xDist,2000)+Math.imul(yDist,828)
-        else
-            return Math.imul(yDist,2000)+Math.imul(xDist,828)
-
+        return Math.max(xDist, yDist) * 1000 + Math.min(xDist, yDist) * 414
+        // return ((startCol - endCol) ** 2
+        //     + (startRow - endRow) ** 2)
     }
 
     // TODO: these should probably be exposed on tiles.Location;
@@ -258,12 +230,11 @@ namespace scene_test {
     //     return tm.isObstacle(l.col, l.row) //(c, r);
     // }
 
-    function isWalkable(l: tiles.Location, onTilesOf: Image, tm: tiles.TileMap): boolean {
+    function isWalkable(l: PrioritizedLocation, onTilesOf: Image, tm: tiles.TileMap): boolean {
         if (tm.isObstacle(l.col, l.row)) return false;
-        if (!onTilesOf) return true;
-        const img = tm.getTileImage(tm.getTileIndex(l.col, l.row))
-        return img.equals(onTilesOf);
+        // if (!onTilesOf) 
+        return true;
+        // const img = tm.getTileImage(tm.getTileIndex(l.col, l.row))
+        // return img.equals(onTilesOf);
     }
 }
-
-

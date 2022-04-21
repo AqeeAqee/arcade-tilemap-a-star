@@ -117,27 +117,38 @@ namespace scene_array {
             const newConsideredTile = new PrioritizedLocation(
                 l,
                 cost,
-                // h ,
-                cost+h*50 //sim: 4=60%,6=57%,8=53%,10=52%, 12=52%, 16=53%,40=51.5%, 50=50.9%, 70=51%, 100=51.5%,
+                cost+h
             )
 
+            //seek end->head, last N are more possible hit;N=len sim=45%;N=20 sim:57%, Meowbit:86.7%;N=28 sim=52.6; N=32 sim:50.7%; N=16 sim:61%,Meowbit:86.7%: 10 sim:65%,Meowbit:95%
             if (consideredTiles.length==0){
                 consideredTiles.push(newConsideredTile)
                 return
             }
-
-            let i = consideredTiles.length - 1
-            // const len = consideredTiles.length>30? consideredTiles.length/2:0 // Meowbit: >100%
+            if(consideredTiles.length>16&&consideredTiles[consideredTiles.length>>1].totalCost<newConsideredTile.totalCost){
+                let i=consideredTiles.length>>1
             //array, sim:50%,meowbit:95.7% 25ms
-            for (;i>=0;i--){  //seek&insert from end, last N are more possible hit;N=len sim=45%;N=20 sim:57%, Meowbit:86.7%;N=28 sim=52.6; N=32 sim:50.7%; N=16 sim:61%,Meowbit:86.7%: 10 sim:65%,Meowbit:95%
-                    if (newConsideredTile.totalCost<consideredTiles[i].totalCost){
-                    // console.log("consideredTiles.insertAt=" + consideredTiles.length+" "+(i+1))
-                        consideredTiles.insertAt(i+1,newConsideredTile)
+                // let i = consideredTiles.length - 1
+                for (;i>=0;i--){  
+                        if (newConsideredTile.totalCost<consideredTiles[i].totalCost){
+                        // console.log("consideredTiles.insertAt=" + consideredTiles.length+" "+(i+1))
+                            consideredTiles.insertAt(i+1,newConsideredTile)
+                            break;
+                        }
+                    }
+                if (i < 0)
+                    consideredTiles.insertAt(0, newConsideredTile)
+            }else{
+                // seek head->end, slower a little than end->head
+                let i = 0
+                for (; i < consideredTiles.length; i++) {
+                    if (newConsideredTile.totalCost > consideredTiles[i].totalCost) {
+                        consideredTiles.insertAt(i, newConsideredTile)
                         break;
                     }
                 }
-            if (i < 0) //outsit for: meowbit:91.7%25.5ms? 95.1%23.3ms
-                consideredTiles.insertAt(0, newConsideredTile)
+                consideredTiles.insertAt(i, newConsideredTile)
+            }
         }
         
         updateOrFillLocation(start, null, 0);
