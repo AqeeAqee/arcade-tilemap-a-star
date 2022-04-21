@@ -4,6 +4,7 @@ namespace scene {
         constructor(
             public loc: SimpleLocation,
             public cost: number,
+            // no need any more
             // public extraCost: number // cost from heuristic
             public totalCost: number  //cost+heuristic
         ) { }
@@ -97,7 +98,7 @@ namespace scene {
                     parent,
                     cost
                 );
-            } else if (!lData.visited && lData.lastCost > cost) {
+            } else if (lData.lastCost > cost) {//!lData.visited && 
                 lData.lastCost = cost;
                 lData.parent = parent;
             } else {
@@ -142,7 +143,7 @@ namespace scene {
             const col = currLocation.loc.col;
 
             const neighborCost = currLocation.cost + 1000;
-            const cornerCost = currLocation.cost + 1414//1.414213562373095;  //much faster
+            const cornerCost = currLocation.cost + 1414//1.414213562373095;
 
             const dataForCurrLocation = encountedLocations[col][row];
 
