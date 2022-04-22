@@ -49,6 +49,9 @@ let path2: tiles.Location[] = []
 let count: number = 0
 // tiles.setTilemap(map)
 tiles.setTilemap(tilemap`level2`)
+
+let layers:Image=(game.currentScene().tileMap.data as any).layers 
+
 let mySprite = sprites.create(img`
     . . . . . . . . . . . . . . . .
     . . . . . . . . . . . . . . . .
@@ -135,6 +138,7 @@ controller.A.onEvent(ControllerButtonEvent.Pressed, function () {
     // scene.followPath(mySprite2, res, 200)
 })
 
+const color1=9, color2=5, colorBoth=7
 function comparing() {
     let {locStart, locTarget, path}=getRandomPath()
     
@@ -171,21 +175,21 @@ function comparing() {
     printSprite.image.fill(0)
     const y = path1 ? path1.length : 119
     let c1 = resultSprite.image.getPixel(ms1, y)
-    resultSprite.image.setPixel(ms1, y, (c1==5||c1==7)?7:8)
+    resultSprite.image.setPixel(ms1, y, (c1 == color2 || c1 == colorBoth) ? colorBoth : color1)
     let c2 = resultSprite.image.getPixel(ms2, y)
-    resultSprite.image.setPixel(ms2, y, (c2 == 8 ||c2==7)?7 :5)
-    printSprite.image.print(msTotal1.toString(), 0, 0)
-    printSprite.image.print(msTotal2.toString(), 0, 10)
-    printSprite.image.print("%" + Math.roundWithPrecision(msTotal1 * 100 / msTotal2, 2).toString(), 0, 20)
-    printSprite.image.print(Math.roundWithPrecision(msTotal1 / 10 / count,3)+"ms", 0, 30)
+    resultSprite.image.setPixel(ms2, y, (c2 == color1 || c2 == colorBoth) ? colorBoth : color2)
+    printSprite.image.print(msTotal1.toString(), 0, 0, color1)
+    printSprite.image.print(msTotal2.toString(), 0, 10, color2)
+    printSprite.image.print("%" + Math.roundWithPrecision(msTotal1 * 100 / msTotal2, 2).toString(), 0, 20, color1)
+    printSprite.image.print(Math.roundWithPrecision(msTotal1 / 10 / count, 3) + "ms", 0, 30, color1)
 
-    comparePaths(path, path1)
+    comparePaths(path2, path1)
     //!!no worry, short path may have higher cost sometime, e.g. 3 corner step longer than 4 straight step
-    if(path1.length>path.length){ 
+    if(path1.length!=path2.length){ 
+        // controller.pauseUntilAnyButtonIsPressed()
+        
         // console.log("[e] length: " + path.length + ":" + path1.length + "[" + locStart.col + "," + locStart.row + "]->" + "[" + locTarget.col + "," + locTarget.row + "]" )
         // const srtPath1 = path1.map((loc) => { return "[" + loc.col + "," + loc.row + "]" }).join()
-        controller.pauseUntilAnyButtonIsPressed()
-        return
     }
 
     pause(1)
@@ -216,22 +220,22 @@ function getRandomPath(){
 
 function comparePaths(path:tiles.Location[], path1:tiles.Location[]){
     pathSprite.image.fill(15)
-    path.forEach((loc) => { pathSprite.image.setPixel(loc.col, loc.row, tiles.tileAtLocationIsWall(loc) ? 2 : 5) })
-    path1.forEach((loc) => { pathSprite.image.setPixel(loc.col, loc.row, pathSprite.image.getPixel(loc.col, loc.row) == 5 ? 7 : 8) })
-    for (let x = 0; x < 40; x++)
-        for (let y = 0; y < 40; y++) {
-            let w = game.currentScene().tileMap.data.isWall(x, y)
-            if (w) {
-                let c = pathSprite.image.getPixel(x, y)
-                if (c == 5) c = 3
-                else if (c == 8) c = 10
-                else if (c == 15) c = 2
-                pathSprite.image.setPixel(x, y, c)
-            }
-        }
+    pathSprite.image.drawTransparentImage(layers,0,0)
+    path.forEach((loc) => {
+        const c=pathSprite.image.getPixel(loc.col, loc.row)
+        if(c ==colorBoth) return
+        pathSprite.image.setPixel(loc.col, loc.row, c == color1? colorBoth : color2) })
+    path1.forEach((loc) => {
+        const c = pathSprite.image.getPixel(loc.col, loc.row)
+        if (c == colorBoth) return
+        pathSprite.image.setPixel(loc.col, loc.row, c == color2 ? colorBoth : color1) })
+
     pathSprite.image.setPixel(path1[0].col, path1[0].row, 1)
-    pathSprite.image.setPixel(path1[path1.length-1].col, path1[path1.length-1].row, 9)
-    pathSprite.image.print(path.length + ":" + path1.length ,0,pathSprite.image.height-8)
+    pathSprite.image.setPixel(path1[path1.length-1].col, path1[path1.length-1].row, 3)
+    const charWidth = image.font5.charWidth
+    pathSprite.image.print(path.length.toString(), 0, pathSprite.image.height - 8, color2)
+    pathSprite.image.print(":", charWidth * 2, pathSprite.image.height - 8, colorBoth)
+    pathSprite.image.print(path1.length.toString(), charWidth * 3, pathSprite.image.height - 8, color1)
 }
 
 function checkPath(path: tiles.Location[]) {
